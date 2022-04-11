@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>고양이 가라사대</title>
+</head>
+<style>
+  body {
+    text-align: center;
+  }
+
+  .main-card button {
+    position: relative;
+    left: -45px;
+    bottom: 15px;
+  }
+
+  .favorites {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  /* .favorites img {
+    width: 150px;
+  } */
+</style>
+
+<body>
+  <div id="app"></div>
+  <!-- TIP: Ctrl + / 하니까, 드래그한 부분이 모두 주석처리가 되었다. -->
+
+  <!-- React와 ReactDOM 라이브러리 추가: 아래 두 문장을 복사 + 붙여넣기 -->
+  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+  <!-- babel : 신세대 자바스크립트를 위한 컴파일러
+  이 컴파일러에 의해 번역된 코드가
+  웹페이지 element의 head에 있는 script에 쓰여 있어
+  웹페이지가 그것을 읽고 해석할 수가 있게 되었다. -->
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <!-- 기존 script 태그에 type을 추가해주어야 한다 -->
+  <script type="text/babel">
+    const jsonLocalStorage = {
+      setItem: (key, value) => {
+        localStorage.setItem(key, JSON.stringify(value));
+      },
+      getItem: (key) => {
+        return JSON.parse(localStorage.getItem(key));
+      },
+    };
+
+    // TIP: 특정 함수 등을 ctrl 누르면서 클릭해보면, 그것의 선언부로 순간이동한다.
+
+    /* 컴포넌트: 웹페이지에서
+    버튼, 페이지 표시, 컨텐츠 카드 등등
+    여러번 반복되는 형태의 요소들 느낌
+    시작은 대문자로 시작! */
+
+    /* JSX 안에 변수를 넣어야 하므로, 중괄호로 감싸줌
+     props에 각 object들이 넘어오게 될것이다.
+     이는 const favorites를 넣어주는 것이므로. */
+    function CatItem(props) {
+      //console.log(props); // object 형식으로, img나 title같은 것이 속성으로 붙어있음.
+      // 스타일링 시, {} 안에 오브젝트({}로 만듦)를 만들어주고, 그 안에 속성 추가하되, value는 string 형태로 전달
+      return (<li>
+        <img src={props.img} style={{ width: '150px' }} />
+      </li>);
+
+      // 스타일링 참고: emotion, tailwindcss
+    }
+
+    /*const FOO = "hello world"
+    function foo() {
+      return 1;
+    }*/
+
+    // {}를 이용하면 리액트 내에서도 자바스크립트 문법을 가져올수 있다
+    /*const favorites = (<ul class="favorites">
+      {1 + 2}
+      {FOO === "hello world" ? 'true' : 'false'}
+      {foo()}
+      {catItem}
+      {catItem}
+      {catItem}
+    </ul>);*/
+
+    /*const favorites = (
+      <ul class="favorites">
+        {catItem}
+        {catItem}
+        {catItem}
+      </ul>
+    )*/
+
+    /*const favorites = (
+      <ul class="favorites">
+        <CatItem img="https://cataas.com//cat/5e9970351b7a400011744233/says/inflearn" title="cat1" />
+        <CatItem img="https://cataas.com/cat/595f280b557291a9750ebf65/says/JavaScript" />
+      </ul>
+    );*/
+
+    // favorites도 컴포넌트로 바꿔보자
+    function Favorites({ favorites }) {
+      // const CAT1 = "https://cataas.com/cat/60b73094e04e18001194a309/says/react";
+      // const CAT2 = "https://cataas.com//cat/5e9970351b7a400011744233/says/inflearn";
+      // const CAT3 = "https://cataas.com/cat/595f280b557291a9750ebf65/says/JavaScript";
+
+      // const cats = [CAT1, CAT2];
+
+      // warning message가 나오는 이유: class 대신 className을 사용하는게 맞다
+      // return (
+      //   <ul className="favorites">
+      //     <CatItem img="https://cataas.com//cat/5e9970351b7a400011744233/says/inflearn" title="cat1" />
+      //     <CatItem img="https://cataas.com/cat/595f280b557291a9750ebf65/says/JavaScript" />
+      //   </ul>
+      // );
+
+      // 리스트 -> map 메소드를 잘 사용할 수 있도록 할 것!
+      // key를 쓰지 않으면, 각각 고유한 key prop이 필요하다고 warning message가 뜬다. key를 추가해주면 됨.
+      // (const cats = [CAT1, CAT2] 로 선언했다면, cats.map(cat => <CatItem img={cat} key={cat} />))
+      return (
+        <ul className="favorites">
+          {favorites.map((cat) => <CatItem img={cat} key={cat} />)}
+        </ul>
+      );
+    }
+
+    /*const mainCard = (
+      <div class="main-card">
+        <img src="https://cataas.com/cat/60b73094e04e18001194a309/says/react" alt="고양이" width="400" />
+        <button>🤍</button>
+      </div>
+    );*/
+
+    const MainCard = ({ img, onHeartClick }) => {
+      // 이하와 같이 handle...Click, handle...MouseOver와 같이 함수명을 짓는 것이 관례
+      // 하트 버튼을 누를 때, 콘솔에 출력하는 함수
+      // function handleHeartClick() {
+      //   console.log("하트 눌렀음");
+      // }
+      // 하트 버튼에 마우스를 올렸을 때, 콘솔에 출력하는 함수
+      // function handleHeartMouseOver() {
+      //   console.log("하트 스쳐 지나감")
+      // }
+
+      // 버튼을 클릭할 때: onClick(여기서는 c가 대문자!)={함수명}
+      // 마우스를 올릴 때: onMouseOver={함수명}
+      return (
+        <div className="main-card">
+          <img src={img} alt="고양이" width="400" />
+          <button onClick={onHeartClick}>🤍</button>
+        </div>
+      );
+    }
+
+    // 참고: 같은 것을 ES6+ 디스트럭처링 문법 적용으로 하면
+    // const MainCard = ({img}) => {
+    //   return (
+    //     <div class="main-card">
+    //       <img src={img} alt="고양이" width="400" />
+    //       <button>🤍</button>
+    //     </div>
+    //   );
+    // }
+    // 구조 분해 문법 참고 링크: https://joshua1988.github.io/vue-camp/es6+/destructuring.html#%E1%84%90%E1%85%B3%E1%86%A8%E1%84%8C%E1%85%A5%E1%86%BC-%E1%84%80%E1%85%A2%E1%86%A8%E1%84%8E%E1%85%A6%E1%84%8B%E1%85%B4-%E1%84%80%E1%85%A1%E1%86%B9%E1%84%8B%E1%85%B3%E1%86%AF-%E1%84%81%E1%85%A5%E1%84%82%E1%85%A2%E1%84%8B%E1%85%A9%E1%84%82%E1%85%B3%E1%86%AB-%E1%84%87%E1%85%A1%E1%86%BC%E1%84%87%E1%85%A5%E1%86%B8
+
+    // 소괄호를 빼도 잘 작동한다
+    // const titleText =
+    //   <h1>1번째 고양이 가라사대</h1>
+    //   ;
+
+    const Title = (props) => {
+      //console.log(props);
+      return (
+        <h1>{props.children}</h1>
+      );
+    }
+
+    // const formDiv = (
+    //   <form>
+    //     <input type="text" name="name" placeholder="영어 대사를 입력해주세요" />
+    //     <button type="submit">생성</button>
+    //   </form>
+    // );
+
+    // 참고: () => ()로 쓰면, 바로 리턴한 것과 같은 효과가 나온다.
+    const FormDiv = ({ updateMainCat }) => {
+      const includesHangul = (text) => /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/i.test(text);
+      const [value, setValue] = React.useState('');
+      const [errorMessage, setErrorMessage] = React.useState('');
+
+      function handleInputChange(e) {
+        const userValue = e.target.value;
+        // e를 출력하면 뜨는 어느 오브젝트에서, target->value에 그 인풋이 보인다. e를 출력해서 확인해보기!
+        //console.log(e.target.value.toUpperCase());
+
+        // 한글을 포함하고 있으면 에러 표시, 그렇지 않으면 에러 초기화
+        if (includesHangul(userValue)) {
+          setErrorMessage("한글은 입력할 수 없습니다.");
+        } else {
+          setErrorMessage("");
+        }
+        setValue(userValue.toUpperCase());
+      }
+
+      function handleFormSubmit(e) {
+        e.preventDefault();
+        // else로 하는 방법 외에도, 그냥 매번 초기화하는 방법도 있음!
+        setErrorMessage("");
+        if (value === '') {
+          setErrorMessage("빈 값으로 만들 수 없습니다.")
+          // 이 경우, updateMainCat을 하지 않고 끝내야 함
+          return;
+        }
+
+        // validation(폼 검증: 사용 가능한 input인지 아닌지) 통과 후
+        updateMainCat();
+      }
+
+      /* 내 마음대로 어느 값을 '동적으로' 변경하고 싶을 때 사용하는 것이 '상태'이고, 
+      이를 위해 사용하는 것이 useState이다.
+      (여기서는 제목의 "n번째"를 매번 1씩 늘려주고 싶음)
+      인자에 있는 값(1)은 초기값! 
+      */
+
+      // const counterState = React.useState(1);
+      // const counter = counterState[0]; // 카운터 그 자체
+      // const setCounter = counterState[1]; // 카운터를 조작하는 함수
+      // 위에 있는 것을 한번에 받으려면 아래와 같이!
+      // const [counter, setCounter] = React.useState(1);
+
+      // console.log("카운터", counter);
+
+      // function handleFormSubmit(event) {
+      //   event.preventDefault();
+      //   console.log("폼 전송됨");
+      //   setCounter(counter + 1); // 카운터를 바꿀수 있다
+      // }
+
+      // handle 함수가 App으로 옮겨갔으므로, 이를 props로 받아와야 함
+      // 버튼을 눌러 form이 제출될 때..onSubmit(<form onSubmit={handleFormSubmit}>)
+      // input의 값이 바뀔 때마다..onChange
+      // value를 넣으면, 우리가 그 인풋 value를 제어할 수 있다.
+      return (
+        <form onSubmit={handleFormSubmit}>
+          <input
+            type="text"
+            name="name"
+            placeholder="영어 대사를 입력해주세요"
+            value={value}
+            onChange={handleInputChange}
+          />
+          <button type="submit">생성</button>
+          <p style={{ color: 'red' }}>{errorMessage}</p>
+        </form>
+      );
+    }
+
+    /* 여러 개를 동시에 그리고 싶을 때 따로 설정..은 하되 
+    상위 태그가 여러 개이면 에러가 발생한다
+    그러므로 따로 div로 묶어주는 등의 작업을 취해주면 됨.*/
+    // 컴포넌트를 적용시키려면, 태그처럼 바꿔서 넣어주면 된다!
+    /*const app = (
+      <div>
+        {titleText}
+        {formDiv}
+        <MainCard />
+        <Favorites />
+      </div>
+    );*/
+
+    /* Title 태그 사이에 텍스트를 쓰면,
+    그 부분이 children 속성으로 넘겨지게 됨.
+    (console.log로 확인 가능)*/
+    const App = () => {
+      const CAT1 = "https://cataas.com/cat/60b73094e04e18001194a309/says/react";
+      const CAT2 = "https://cataas.com//cat/5e9970351b7a400011744233/says/inflearn";
+      const CAT3 = "https://cataas.com/cat/595f280b557291a9750ebf65/says/JavaScript";
+
+      /* form에만 있던 카운터를 title에도 적용시키려면, 
+      그것을 부모 컴포넌트인 App으로 옮겨와야 한다!
+      이와 같은 조작을 상태 끌어 올리기(lifting state up)라고 한다. */
+      //const [counter, setCounter] = React.useState(1);
+      const [counter, setCounter] = React.useState(
+        // local Storage에서 가져온 경우: 각 value가 string 형태로 저장되어 있음! 이를 숫자로 바꿔줘야 한다.
+        // (아래는 상호작용을 편하게 하기 위해 제작해주신 util인 jsonLocalStorage를 이용한 것)
+        jsonLocalStorage.getItem('counter')
+      );
+
+      // Quiz: 생성 버튼을 누르면 MainCard 고양이 사진을 CAT2로 변경
+      const [maincardImage, setMaincardImage] = React.useState(CAT1);
+
+      // Favorites도 상태로 관리해보기
+      // const [favorites, setFavorites] = React.useState([CAT1, CAT2]);
+      const [favorites, setFavorites] = React.useState(
+        // 'or의 앞에 있는 것이 없으면, 뒤에 있는 것을 써라' -> favorites에 있는 것을 초기값으로 하는데, 없으면 빈 배열로 써라.
+        jsonLocalStorage.getItem("favorites") || []
+      );
+
+      function updateMainCat() {
+        setMaincardImage(CAT2);
+        const nextCounter = counter + 1;
+        setCounter(nextCounter); // 카운터를 바꿀수 있다
+        jsonLocalStorage.setItem('counter', nextCounter);
+      }
+
+      function handleHeartClick() {
+        const nextFavorites = [...favorites, maincardImage]
+        setFavorites(nextFavorites);
+        jsonLocalStorage.setItem('favorites', nextFavorites);
+      }
+
+      // FormDiv에서 handleFormSubmit 함수를 쓰게 하기 위해 props로 넘겨준다
+      return (
+        <div>
+          <Title>{counter}번째 고양이 가라사대</Title>
+          <FormDiv updateMainCat={updateMainCat} />
+          <MainCard img={maincardImage} onHeartClick={handleHeartClick} />
+          <Favorites favorites={favorites} />
+        </div>
+      )
+    }
+
+    const 여기다가그려 = document.querySelector('#app');
+    /* 
+    ReactDOM의 등장
+    render: 그린다 - 첫번째 인자를 두번째 인자에다가 그려라 */
+    ReactDOM.render(<App />, 여기다가그려);
+  </script>
+</body>
+
+</html>
