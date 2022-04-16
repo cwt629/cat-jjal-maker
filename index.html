@@ -33,7 +33,7 @@
 
 <body>
   <div id="app"></div>
-  <!-- TIP: Ctrl + / 하니까, 드래그한 부분이 모두 주석처리가 되었다. -->
+
 
   <!-- React와 ReactDOM 라이브러리 추가: 아래 두 문장을 복사 + 붙여넣기 -->
   <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
@@ -54,7 +54,13 @@
       },
     };
 
-    // TIP: 특정 함수 등을 ctrl 누르면서 클릭해보면, 그것의 선언부로 순간이동한다.
+    const fetchCat = async (text) => {
+      const OPEN_API_DOMAIN = "https://cataas.com";
+      // await가 .then ...을 대신해주는 문법이다.
+      const response = await fetch(`${OPEN_API_DOMAIN}/cat/says/${text}?json=true`);
+      const responseJson = await response.json();
+      return `${OPEN_API_DOMAIN}/${responseJson.url}`;
+    };
 
     /* 컴포넌트: 웹페이지에서
     버튼, 페이지 표시, 컨텐츠 카드 등등
@@ -120,6 +126,12 @@
       //   </ul>
       // );
 
+      // 즐겨찾기가 비어있으면, 텍스트 출력해주기(조건부 렌더링 - 특정 조건에 따른 요소를 보여주어라.)
+      if (favorites.length === 0) {
+        return <div>사진 위 하트를 눌러 고양이 사진을 저장해봐요!</div>;
+      }
+
+
       // 리스트 -> map 메소드를 잘 사용할 수 있도록 할 것!
       // key를 쓰지 않으면, 각각 고유한 key prop이 필요하다고 warning message가 뜬다. key를 추가해주면 됨.
       // (const cats = [CAT1, CAT2] 로 선언했다면, cats.map(cat => <CatItem img={cat} key={cat} />))
@@ -137,23 +149,16 @@
       </div>
     );*/
 
-    const MainCard = ({ img, onHeartClick }) => {
-      // 이하와 같이 handle...Click, handle...MouseOver와 같이 함수명을 짓는 것이 관례
-      // 하트 버튼을 누를 때, 콘솔에 출력하는 함수
-      // function handleHeartClick() {
-      //   console.log("하트 눌렀음");
-      // }
-      // 하트 버튼에 마우스를 올렸을 때, 콘솔에 출력하는 함수
-      // function handleHeartMouseOver() {
-      //   console.log("하트 스쳐 지나감")
-      // }
+    const MainCard = ({ img, onHeartClick, alreadyFavorite }) => {
+      // 하트를 눌러 즐겨찾기에 저장되어 있는지에 따라 하트 색 바꾸기
+      const heartIcon = alreadyFavorite ? "💖" : "🤍";
 
       // 버튼을 클릭할 때: onClick(여기서는 c가 대문자!)={함수명}
       // 마우스를 올릴 때: onMouseOver={함수명}
       return (
         <div className="main-card">
           <img src={img} alt="고양이" width="400" />
-          <button onClick={onHeartClick}>🤍</button>
+          <button onClick={onHeartClick}>{heartIcon}</button>
         </div>
       );
     }
@@ -218,8 +223,8 @@
           return;
         }
 
-        // validation(폼 검증: 사용 가능한 input인지 아닌지) 통과 후
-        updateMainCat();
+        // validation(폼 검증: 사용 가능한 input인지 아닌지) 통과 후, 받은 값을 value로 넘겨 짤에 기입이 되게 한다.
+        updateMainCat(value);
       }
 
       /* 내 마음대로 어느 값을 '동적으로' 변경하고 싶을 때 사용하는 것이 '상태'이고, 
@@ -286,27 +291,94 @@
       그것을 부모 컴포넌트인 App으로 옮겨와야 한다!
       이와 같은 조작을 상태 끌어 올리기(lifting state up)라고 한다. */
       //const [counter, setCounter] = React.useState(1);
-      const [counter, setCounter] = React.useState(
-        // local Storage에서 가져온 경우: 각 value가 string 형태로 저장되어 있음! 이를 숫자로 바꿔줘야 한다.
-        // (아래는 상호작용을 편하게 하기 위해 제작해주신 util인 jsonLocalStorage를 이용한 것)
-        jsonLocalStorage.getItem('counter')
-      );
+      // const [counter, setCounter] = React.useState(
+      //   // local Storage에서 가져온 경우: 각 value가 string 형태로 저장되어 있음! 이를 숫자로 바꿔줘야 한다.
+      //   // (아래는 상호작용을 편하게 하기 위해 제작해주신 util인 jsonLocalStorage를 이용한 것)
+      //   jsonLocalStorage.getItem('counter')
+      // );
+
+      /* 위 함수가 UI update마다 jsonLocalStorage를 접근하는 부하가 생기므로, 
+      useEffect에서처럼, useState의 인자에 함수를 넘겨준다. */
+      const [counter, setCounter] = React.useState(() => {
+        return jsonLocalStorage.getItem('counter');
+      });
 
       // Quiz: 생성 버튼을 누르면 MainCard 고양이 사진을 CAT2로 변경
       const [maincardImage, setMaincardImage] = React.useState(CAT1);
 
       // Favorites도 상태로 관리해보기
       // const [favorites, setFavorites] = React.useState([CAT1, CAT2]);
-      const [favorites, setFavorites] = React.useState(
-        // 'or의 앞에 있는 것이 없으면, 뒤에 있는 것을 써라' -> favorites에 있는 것을 초기값으로 하는데, 없으면 빈 배열로 써라.
-        jsonLocalStorage.getItem("favorites") || []
-      );
+      // const [favorites, setFavorites] = React.useState(
+      //   // 'or의 앞에 있는 것이 없으면, 뒤에 있는 것을 써라' -> favorites에 있는 것을 초기값으로 하는데, 없으면 빈 배열로 써라.
+      //   jsonLocalStorage.getItem("favorites") || []
+      // );
+      const [favorites, setFavorites] = React.useState(() => {
+        return jsonLocalStorage.getItem("favorites") || [];
+      })
 
-      function updateMainCat() {
-        setMaincardImage(CAT2);
+      // 보여진 사진이 즐겨찾기에 있는지 여부
+      const alreadyFavorite = favorites.includes(maincardImage);
+
+      // QUIZ: counter가 null이면 타이틀의 'n번째'를 삭제하기
+      const titleText = (counter === null) ? '고양이 가라사대' : `${counter}번째 고양이 가라사대`;
+
+      // 처음 App 함수 실행 시 받는 메인 고양이 사진 받아오기
+      async function setInitialCat() {
+        const newCat = await fetchCat('First cat');
+        console.log(newCat);
+        setMaincardImage(newCat);
+      }
+
+      /* CAUTION!! 
+      컴포넌트 안에 있는 모든 함수는 시작할 때 한번만 불리는 것이 아니라,
+      UI가 새로 업데이트될 때마다 불리는 것이다.
+      그래서, setInitialCat 함수에 console.log를 찍고 그대로 호출만 했다면
+      console에 무언가가 무한으로 계속 출력되게 된다.
+      그래서, useEffect를 이용하여 함수를 감싸준다.
+
+      이 프로젝트에서 보면,
+      App 함수는 기존 사진 그리기 + 새로 update
+      할 때마다 실행이 되고 그려진다.
+      
+      그래서, 원하는 때에만 함수를 호출하고 싶을 때(두번째 인자로 제한)
+      useEffect를 사용하는 것!
+
+      두번째 인자에 [], 즉 빈 배열을 넣으면
+      컴포넌트가 맨 처음에 나타날 때만 호출된다.
+      배열 안에 [counter]와 같이 변수 등을 넣으면,
+      그 변수가 바뀔 때마다 함수가 호출된다.
+      */
+      // 초기 고양이 사진 받아오기
+      React.useEffect(() => {
+        setInitialCat();
+      }, []);
+
+      // async - await 을 넣어주어야 한다.(28강 참조)
+      async function updateMainCat(value) {
+        const newCat = await fetchCat(value);
+
+        setMaincardImage(newCat);
         const nextCounter = counter + 1;
-        setCounter(nextCounter); // 카운터를 바꿀수 있다
-        jsonLocalStorage.setItem('counter', nextCounter);
+        //setCounter(nextCounter); // 카운터를 바꿀수 있다
+        /* 
+          버튼을 빠르게 여러번 누르면, 위와 같은 경우
+          React에서 useState에 대한 액션을 처리할 때
+          현재 counter state와, setCounter가 바라보는 counter 사이의
+          mismatch가 생길 수 있기 때문에
+          카운터가 제대로 올라가지 않는 경우가 생긴다.
+          그래서, 아래와 같이 setCounter에 함수를 인자로 넣고
+          기존 counter를 그 함수의 인자로 넘겨 반환값을 받는다.
+
+          또한, 원래 setCounter와 별개로 실행했던
+          jsonLocalStorage.setItem 함수 역시
+          setCounter에 인자로 넘긴 함수 내에 넣어주어
+          변경된 counter와 동기화가 잘되게 한다.
+        */
+        setCounter((prev) => {
+          const nextCounter = prev + 1;
+          jsonLocalStorage.setItem('counter', nextCounter);
+          return nextCounter;
+        });
       }
 
       function handleHeartClick() {
@@ -318,14 +390,15 @@
       // FormDiv에서 handleFormSubmit 함수를 쓰게 하기 위해 props로 넘겨준다
       return (
         <div>
-          <Title>{counter}번째 고양이 가라사대</Title>
+          <Title>{titleText}</Title>
           <FormDiv updateMainCat={updateMainCat} />
-          <MainCard img={maincardImage} onHeartClick={handleHeartClick} />
+          <MainCard img={maincardImage} onHeartClick={handleHeartClick} alreadyFavorite={alreadyFavorite} />
           <Favorites favorites={favorites} />
         </div>
       )
     }
 
+    // create-react-app에서는 아래 작업은 자동으로 해준다.
     const 여기다가그려 = document.querySelector('#app');
     /* 
     ReactDOM의 등장
@@ -335,3 +408,37 @@
 </body>
 
 </html>
+
+<!--
+  그 외 정보들
+
+  0) 관례 및 사소한 tip들
+  - 특정 함수 등을 ctrl 누르면서 클릭해보면, 그것의 선언부로 순간이동한다.
+  - Ctrl + / 하니까, 드래그한 부분이 모두 주석처리가 되었다.
+  - 상태 변경 함수를 설정할 때, handle...Click, handle...MouseOver와 같이 함수명을 짓는 것이 관례
+
+  1) open API
+  https://github.com/public-apis/public-apis
+  여기서 확인할 수 있다.
+  이 프로젝트에서는 고양이 사진에 text를 쓸 수 있는 url이 필요한데,
+  그것은 animals -> cataas에서 url을 찾아보았다.
+
+  2) fetch API
+  자바스크립트의 API로,
+  fetch API를 검색해서, using fetch API로 들어오면
+  사용법을 확인할 수 있다.
+  이를 따라가서 console에 출력해보면,
+  그 안에 속성으로 url을 확인할 수 있으며
+  그 url을 기존 url에 덧붙여서 검색해보면
+  고양이 사진이 브라우저에 잘 나오는 것을 확인할 수 있다.
+
+  3) 실제 유저들에게 공개하기 전에는 무엇을 해야 할까?
+  - 프로덕션 버전 리액트 라이브러리 사용
+  (script 태그에 보면 이 프로젝트에선 react.development.js 등을 사용하는데,
+  이에 대한 프로덕션 버전 라이브러리가 있을 것임)
+  - 바벨 떼기
+  (브라우저에서 매번 바벨로 JS로 통역하는 게 아니고, 이미 통역된 js를 올린다)
+  ==> create-react-app 이용 가능
+  create react app 을 검색하여 공식 문서(reactjs.org)에 있는
+  create react app 명령어를 따라가자.
+-->
